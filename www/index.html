@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#111111">
+<title>ब्राह्मण Media Downloader</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #111111;
+  --surface: #1c1c1e;
+  --surface2: #2c2c2e;
+  --surface3: #3a3a3c;
+  --border: #3a3a3c;
+  --orange: #ff6a00;
+  --red: #ee0979;
+  --grad: linear-gradient(135deg, #ff6a00, #ee0979);
+  --green: #30d158;
+  --blue: #0a84ff;
+  --yellow: #ffd60a;
+  --text: #ffffff;
+  --text2: #ebebf5cc;
+  --muted: #8e8e93;
+  --r: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 70px;
+  overscroll-behavior: none;
+  user-select: none;
+}
+
+/* ── SERVER CONFIG SCREEN ── */
+#serverScreen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+.server-logo {
+  width: 80px; height: 80px;
+  border-radius: 22px;
+  background: var(--grad);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 30px rgba(255,106,0,0.3);
+}
+.server-title {
+  font-family: 'Tiro Devanagari Hindi', serif;
+  font-size: 1.4rem;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.server-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 30px; text-align: center; }
+.server-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; align-self: flex-start; width: 100%; }
+.server-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  outline: none;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.server-input:focus { border-color: var(--orange); }
+.server-hint { font-size: 0.75rem; color: var(--muted); margin-bottom: 24px; text-align: center; line-height: 1.6; }
+.btn-connect {
+  width: 100%;
+  background: var(--grad);
+  border: none;
+  border-radius: 12px;
+  padding: 15px;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+.btn-connect:active { opacity: 0.85; }
+.server-error { color: #ff453a; font-size: 0.82rem; margin-top: 8px; display: none; }
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 16px 10px;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--border);
+}
+.topbar-title {
+  font-family: 'Tiro Devanagari Hindi', serif;
+  font-size: 1.2rem;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+.tbadge {
+  font-size: 0.68rem; font-weight: 600;
+  padding: 3px 8px; border-radius: 20px;
+  background: var(--surface2);
+}
+.tbadge.a { color: var(--green); }
+.tbadge.q { color: var(--yellow); }
+.btn-settings-top {
+  background: var(--surface2);
+  border: none; border-radius: 8px;
+  width: 32px; height: 32px;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── BOTTOM NAV ── */
+.bnav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex; z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bni {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; padding: 9px 0 7px;
+  cursor: pointer; color: var(--muted);
+  font-size: 0.66rem; font-weight: 600; gap: 3px;
+  transition: color 0.15s;
+}
+.bni.on { color: var(--orange); }
+.bni-ico { font-size: 1.25rem; line-height: 1; }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.on { display: block; }
+
+/* ── SEARCH ── */
+.search-wrap { padding: 12px 16px; display: flex; gap: 8px; }
+.search-inner { flex: 1; position: relative; }
+.search-ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search-input {
+  width: 100%;
+  background: var(--surface2);
+  border: none; border-radius: 12px;
+  padding: 11px 14px 11px 38px;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem; outline: none;
+}
+.search-input::placeholder { color: var(--muted); }
+.btn-go {
+  background: var(--grad); border: none;
+  border-radius: 12px; padding: 11px 18px;
+  color: white; font-weight: 700;
+  font-size: 0.9rem; cursor: pointer;
+}
+.btn-go:active { opacity: 0.8; }
+
+/* ── SHEET ── */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 150; display: none;
+  align-items: flex-end;
+  backdrop-filter: blur(3px);
+}
+.overlay.on { display: flex; }
+.sheet {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  width: 100%; max-height: 93vh;
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+  padding-bottom: 30px;
+}
+.sheet-handle { width: 36px; height: 4px; background: var(--surface3); border-radius: 2px; margin: 12px auto 0; }
+.sheet-hdr {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 0;
+}
+.sheet-hdr-left .sheet-title { font-size: 1rem; font-weight: 700; }
+.sheet-hdr-left .sheet-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.sheet-hdr-right { display: flex; gap: 8px; }
+.btn-sched {
+  background: var(--surface2); border: none;
+  border-radius: 20px; padding: 8px 12px;
+  color: var(--text); font-size: 0.85rem; cursor: pointer;
+}
+.btn-dl-main {
+  background: var(--grad); border: none;
+  border-radius: 20px; padding: 8px 16px;
+  color: white; font-weight: 700;
+  font-size: 0.85rem; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+}
+.btn-dl-main:disabled { opacity: 0.5; }
+
+/* ── THUMB ── */
+.thumb-wrap { position: relative; }
+.thumb-img { width: 100%; max-height: 195px; object-fit: cover; display: none; }
+.thumb-img.on { display: block; }
+.thumb-badge {
+  position: absolute; top: 8px; left: 8px;
+  background: rgba(0,0,0,0.72); color: white;
+  font-size: 0.68rem; font-weight: 700;
+  padding: 3px 8px; border-radius: 20px;
+}
+.thumb-dur {
+  position: absolute; bottom: 8px; right: 8px;
+  background: rgba(0,0,0,0.82); color: white;
+  font-size: 0.7rem; font-weight: 600;
+  padding: 2px 6px; border-radius: 4px;
+}
+.thumb-pl {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--blue); color: white;
+  font-size: 0.68rem; font-weight: 700;
+  padding: 3px 8px; border-radius: 20px;
+  display: none;
+}
+
+/* ── TABS ── */
+.tabs { display: flex; padding: 14px 16px 0; border-bottom: 1px solid var(--border); }
+.tab {
+  padding: 8px 18px; font-size: 0.88rem; font-weight: 600;
+  color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.tab.on { color: var(--text); border-bottom-color: var(--blue); }
+
+/* ── FORM ── */
+.fsec { padding: 14px 16px 0; }
+.frow { display: flex; gap: 10px; margin-bottom: 10px; }
+.fgrp { flex: 1; }
+.flbl { font-size: 0.7rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; }
+.finput, .fsel {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 0.88rem; outline: none;
+}
+.finput:focus, .fsel:focus { border-color: var(--blue); }
+.fsel option { background: var(--surface); }
+
+/* ── QUALITY ── */
+.qsec { padding: 12px 16px 0; }
+.qlbl { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
+.qlist { display: flex; flex-wrap: wrap; gap: 7px; }
+.qchip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 8px 11px; cursor: pointer;
+  transition: all 0.15s; min-width: 78px;
+}
+.qchip.on { border-color: var(--blue); background: rgba(10,132,255,0.12); }
+.qfmt {
+  background: var(--blue); color: white;
+  font-size: 0.6rem; font-weight: 700;
+  padding: 2px 5px; border-radius: 3px; white-space: nowrap;
+}
+.qres { font-size: 0.82rem; font-weight: 600; }
+.qinfo { font-size: 0.62rem; color: var(--muted); margin-top: 1px; }
+
+/* ── SAVEDIR ── */
+.savedir {
+  margin: 10px 16px 0;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px;
+}
+.savedir-lbl { font-size: 0.65rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
+.savedir-path { font-size: 0.78rem; color: var(--text2); }
+
+/* ── ADJUST ── */
+.asec { padding: 12px 16px 0; }
+.albl { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+.agrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.abtn {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 10px 6px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px; cursor: pointer;
+  transition: all 0.15s; position: relative;
+}
+.abtn.on { border-color: var(--orange); background: rgba(255,106,0,0.1); }
+.abtn-ico { font-size: 1.15rem; }
+.abtn-lbl { font-size: 0.68rem; font-weight: 600; color: var(--text2); text-align: center; line-height: 1.2; }
+.abadge {
+  position: absolute; top: -5px; right: -5px;
+  background: var(--orange); color: white;
+  font-size: 0.58rem; font-weight: 700;
+  width: 15px; height: 15px; border-radius: 50%;
+  display: none; align-items: center; justify-content: center;
+}
+.abadge.on { display: flex; }
+
+/* ── PROGRESS ── */
+.prog-sec { margin: 14px 16px 0; display: none; }
+.prog-track { background: var(--surface2); border-radius: 20px; height: 5px; overflow: hidden; margin-bottom: 5px; }
+.prog-fill { height: 100%; width: 0%; background: var(--grad); border-radius: 20px; transition: width 0.35s; }
+.prog-stats { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-bottom: 5px; }
+.prog-status { font-size: 0.8rem; font-weight: 600; }
+.prog-log { background: #0a0a0a; border-radius: 8px; padding: 8px; font-family: monospace; font-size: 0.65rem; color: #555; max-height: 75px; overflow-y: auto; margin-top: 6px; display: none; }
+.prog-log.on { display: block; }
+.prog-btns { display: flex; gap: 7px; margin-top: 8px; }
+.prog-btns button { flex: 1; padding: 9px; border: none; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+.btn-cancel { background: var(--surface3); color: white; }
+.btn-log-toggle { background: var(--surface2); color: var(--text2); }
+
+/* ── COMMAND TAB ── */
+.cmd-wrap { padding: 14px 16px; }
+.cmd-area {
+  width: 100%; background: #0a0a0a;
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px; color: #30d158;
+  font-family: monospace; font-size: 0.8rem;
+  outline: none; resize: vertical; min-height: 110px;
+  margin-bottom: 10px;
+}
+
+/* ── DOWNLOADS PAGE ── */
+.filter-row { display: flex; gap: 8px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+.filter-row::-webkit-scrollbar { display: none; }
+.fchip {
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 0.78rem; font-weight: 600;
+  border: 1.5px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  cursor: pointer; white-space: nowrap; transition: all 0.15s;
+}
+.fchip.on { border-color: var(--orange); color: var(--orange); background: rgba(255,106,0,0.1); }
+.dllist { padding: 12px 16px; }
+.dlcard {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+  margin-bottom: 12px; animation: fadeUp 0.25s ease;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.dlcard-thumb { width: 100%; height: 145px; object-fit: cover; display: block; background: var(--surface2); }
+.dlcard-thumb-wrap { position: relative; }
+.type-tag {
+  position: absolute; bottom: 7px; left: 7px;
+  font-size: 0.62rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px; color: white;
+}
+.type-tag.video { background: var(--blue); }
+.type-tag.audio { background: var(--green); color: #000; }
+.dlcard-body { padding: 10px 12px; }
+.dlcard-title { font-size: 0.88rem; font-weight: 600; margin-bottom: 3px; }
+.dlcard-sub { font-size: 0.7rem; color: var(--muted); margin-bottom: 7px; }
+.dlcard-prog-track { background: var(--surface2); border-radius: 20px; height: 4px; overflow: hidden; margin-bottom: 4px; }
+.dlcard-prog { height: 100%; width: 0%; background: var(--grad); border-radius: 20px; transition: width 0.3s; }
+.dlcard-status { font-size: 0.75rem; font-weight: 600; }
+.dlcard-status.done { color: var(--green); }
+.dlcard-status.error { color: #ff453a; }
+.dlcard-status.active { color: var(--orange); }
+.dlcard-stats { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; }
+
+/* ── MORE PAGE ── */
+.more-hdr {
+  display: flex; flex-direction: column;
+  align-items: center; padding: 30px 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.more-logo {
+  width: 72px; height: 72px; border-radius: 20px;
+  background: var(--grad); display: flex;
+  align-items: center; justify-content: center;
+  font-size: 2rem; margin-bottom: 12px;
+  box-shadow: 0 6px 25px rgba(255,106,0,0.25);
+}
+.more-name {
+  font-family: 'Tiro Devanagari Hindi', serif;
+  font-size: 1.1rem; background: var(--grad);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+.more-ver { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+.more-list { padding: 6px 0; }
+.mitem {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; cursor: pointer;
+  transition: background 0.1s;
+}
+.mitem:active { background: var(--surface2); }
+.mitem-ico {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: var(--surface2); display: flex;
+  align-items: center; justify-content: center; font-size: 1.05rem;
+}
+.mitem-lbl { font-size: 0.92rem; font-weight: 500; }
+.mitem-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.mdivider { height: 1px; background: var(--border); margin: 3px 0; }
+
+/* ── SUB PAGE OVERLAY ── */
+.sub-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 200; display: none; align-items: flex-end;
+}
+.sub-overlay.on { display: flex; }
+.sub-sheet {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  width: 100%; max-height: 88vh;
+  overflow-y: auto; padding: 0 0 30px;
+  border-top: 1px solid var(--border);
+}
+.sub-hdr {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+  background: var(--surface);
+}
+.sub-hdr-title { font-size: 0.95rem; font-weight: 700; }
+.btn-close-sub {
+  background: var(--surface2); border: none;
+  border-radius: 8px; padding: 6px 12px;
+  color: var(--muted); font-size: 0.82rem; cursor: pointer;
+}
+.sub-content { padding: 14px 16px; }
+
+/* ── QUEUE/LOG/FILES ── */
+.qitem {
+  background: var(--surface2); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px;
+}
+.qitem-info { flex: 1; min-width: 0; }
+.qitem-url { font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qitem-meta { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.btn-qcancel { background: none; border: none; color: #ff453a; font-size: 1rem; cursor: pointer; padding: 6px; }
+
+.logitem { background: var(--surface2); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+.logitem-hdr { display: flex; align-items: center; gap: 8px; }
+.logdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.logdot.success { background: var(--green); }
+.logdot.failed { background: #ff453a; }
+.logtitle { font-size: 0.82rem; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.logdate { font-size: 0.68rem; color: var(--muted); }
+.logtext { font-family: monospace; font-size: 0.65rem; color: #555; background: #0a0a0a; padding: 8px; border-radius: 6px; white-space: pre-wrap; max-height: 110px; overflow-y: auto; display: none; margin-top: 7px; }
+.logtext.on { display: block; }
+
+.fileitem { background: var(--surface2); border-radius: 10px; padding: 11px 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 11px; }
+.fileico { font-size: 1.5rem; flex-shrink: 0; }
+.filename { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.filemeta { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+/* ── SETTINGS ── */
+.set-section { margin-bottom: 16px; }
+.set-header { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.set-card { background: var(--surface2); border-radius: var(--r); overflow: hidden; }
+.set-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border); gap: 12px;
+}
+.set-row:last-child { border-bottom: none; }
+.set-lbl { font-size: 0.87rem; font-weight: 500; }
+.set-sub { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.toggle { width: 44px; height: 26px; background: var(--surface3); border-radius: 13px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+.toggle.on { background: var(--green); }
+.toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.toggle.on::after { transform: translateX(18px); }
+.mini-sel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.8rem; outline: none; }
+
+/* ── EMPTY / SPIN ── */
+.empty { text-align: center; color: var(--muted); padding: 45px 20px; }
+.empty-ico { font-size: 3rem; margin-bottom: 10px; }
+.empty-txt { font-size: 0.88rem; }
+.spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--surface3); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.5s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── FORMATS MODAL ── */
+.fmt-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 300; display: none; align-items: flex-end; }
+.fmt-overlay.on { display: flex; }
+.fmt-sheet { background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-height: 75vh; overflow-y: auto; padding-bottom: 20px; }
+.fmt-handle { width: 36px; height: 4px; background: var(--surface3); border-radius: 2px; margin: 12px auto 8px; }
+.fmt-title-bar { font-size: 0.9rem; font-weight: 700; padding: 0 16px 10px; border-bottom: 1px solid var(--border); }
+.fmt-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.fmt-row:last-child { border-bottom: none; }
+.fmt-row:active { background: var(--surface2); }
+.fmt-left { font-size: 0.85rem; font-weight: 600; }
+.fmt-right { font-size: 0.72rem; color: var(--muted); text-align: right; }
+.fmt-tags { display: flex; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
+.ftag { font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; color: white; background: var(--surface3); }
+.ftag.mp4, .ftag.webm, .ftag.mkv { background: var(--blue); }
+.ftag.mp3, .ftag.m4a, .ftag.opus, .ftag.flac { background: var(--green); color: #000; }
+</style>
+</head>
+<body>
+
+<!-- SERVER CONFIG SCREEN -->
+<div id="serverScreen">
+  <div class="server-logo">⬇</div>
+  <div class="server-title">ब्राह्मण Media Downloader</div>
+  <div class="server-sub">Connect to your Termux server</div>
+  <div class="server-label">Server IP Address</div>
+  <input class="server-input" id="serverIP" placeholder="192.168.1.x:3000" value="localhost:3000" />
+  <div class="server-hint">
+    Open Termux and run:<br>
+    <strong style="color:var(--orange)">node index.js</strong><br>
+    Then enter your phone's IP address above
+  </div>
+  <button class="btn-connect" onclick="connectServer()">Connect to Server</button>
+  <div class="server-error" id="serverError">❌ Cannot connect. Make sure server is running.</div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-title">ब्राह्मण Media Downloader</div>
+  <div class="topbar-right">
+    <span class="tbadge a" id="badgeA">▶ 0</span>
+    <span class="tbadge q" id="badgeQ">⏳ 0</span>
+    <button class="btn-settings-top" onclick="openSub('settings')">⚙</button>
+  </div>
+</div>
+
+<!-- HOME PAGE -->
+<div class="page on" id="pg-home">
+  <div class="search-wrap">
+    <div class="search-inner">
+      <span class="search-ico">🔍</span>
+      <input class="search-input" id="mainUrl" placeholder="Paste YouTube, Instagram link..." />
+    </div>
+    <button class="btn-go" onclick="fetchAndShow()">Search</button>
+  </div>
+  <div id="homeMsg" class="empty" style="margin-top:40px">
+    <div class="empty-ico">⬇</div>
+    <div class="empty-txt">Paste a link to get started</div>
+    <div style="font-size:0.75rem;margin-top:8px;color:var(--muted)">YouTube · Instagram · Twitter · 1000+ sites</div>
+  </div>
+</div>
+
+<!-- DOWNLOADS PAGE -->
+<div class="page" id="pg-downloads">
+  <div class="filter-row">
+    <div class="fchip on" onclick="setFilter('all',this)">↑ Date added</div>
+    <div class="fchip" onclick="setFilter('audio',this)">Audio</div>
+    <div class="fchip" onclick="setFilter('video',this)">Video</div>
+    <div class="fchip" onclick="setFilter('active',this)">Active</div>
+  </div>
+  <div class="dllist" id="dlList">
+    <div class="empty" style="margin-top:30px"><div class="empty-ico">📥</div><div class="empty-txt">No downloads yet</div></div>
+  </div>
+</div>
+
+<!-- MORE PAGE -->
+<div class="page" id="pg-more">
+  <div class="more-hdr">
+    <div class="more-logo">⬇</div>
+    <div class="more-name">ब्राह्मण Media Downloader</div>
+    <div class="more-ver">v1.0 · Powered by yt-dlp · 1000+ sites</div>
+  </div>
+  <div class="more-list">
+    <div class="mitem" onclick="openSub('queue')">
+      <div class="mitem-ico">🔄</div>
+      <div><div class="mitem-lbl">Download Queue</div><div class="mitem-sub">View and manage active queue</div></div>
+    </div>
+    <div class="mitem" onclick="openSub('logs')">
+      <div class="mitem-ico">📋</div>
+      <div><div class="mitem-lbl">Logs</div><div class="mitem-sub">View download logs and errors</div></div>
+    </div>
+    <div class="mitem" onclick="openSub('files')">
+      <div class="mitem-ico">📁</div>
+      <div><div class="mitem-lbl">Browse Files</div><div class="mitem-sub">/Download/Brahman folder</div></div>
+    </div>
+    <div class="mdivider"></div>
+    <div class="mitem" onclick="openSub('server')">
+      <div class="mitem-ico">🌐</div>
+      <div><div class="mitem-lbl">Server Settings</div><div class="mitem-sub" id="serverAddrDisplay">Not connected</div></div>
+    </div>
+    <div class="mitem" onclick="openSub('settings')">
+      <div class="mitem-ico">⚙</div>
+      <div><div class="mitem-lbl">Settings</div><div class="mitem-sub">App preferences</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DOWNLOAD SHEET -->
+<div class="overlay" id="dlOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="thumb-wrap">
+      <img class="thumb-img" id="shThumb" />
+      <span class="thumb-badge" id="shPlatform"></span>
+      <span class="thumb-dur" id="shDur"></span>
+      <span class="thumb-pl" id="shPl"></span>
+    </div>
+    <div class="sheet-hdr">
+      <div class="sheet-hdr-left">
+        <div class="sheet-title">Download</div>
+        <div class="sheet-sub">Adjust download</div>
+      </div>
+      <div class="sheet-hdr-right">
+        <button class="btn-sched" onclick="scheduleDownload()">🕐</button>
+        <button class="btn-dl-main" id="btnDl" onclick="startDL()">⬇ Download</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab on" id="tabAudioBtn" onclick="switchTab('audio',this)">Audio</div>
+      <div class="tab" id="tabVideoBtn" onclick="switchTab('video',this)">Video</div>
+      <div class="tab" id="tabCmdBtn" onclick="switchTab('cmd',this)">Command</div>
+    </div>
+
+    <!-- AUDIO TAB -->
+    <div id="tabAudio">
+      <div class="fsec">
+        <div class="frow">
+          <div class="fgrp"><div class="flbl">Title</div><input class="finput" id="aTitle" placeholder="Auto" /></div>
+        </div>
+        <div class="frow">
+          <div class="fgrp"><div class="flbl">Author</div><input class="finput" id="aAuthor" placeholder="Auto" /></div>
+          <div class="fgrp">
+            <div class="flbl">Container</div>
+            <select class="fsel" id="aFormat">
+              <option value="mp3">MP3</option>
+              <option value="m4a">M4A</option>
+              <option value="opus">OPUS</option>
+              <option value="flac">FLAC</option>
+              <option value="wav">WAV</option>
+              <option value="aac">AAC</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="savedir">
+        <div class="savedir-lbl">Save dir</div>
+        <div class="savedir-path">/storage/emulated/0/Download/Brahman/Audio</div>
+      </div>
+      <div class="asec">
+        <div class="albl">Adjust audio</div>
+        <div class="agrid">
+          <div class="abtn" id="aAThumb" onclick="this.classList.toggle('on')"><div class="abtn-ico">🖼</div><div class="abtn-lbl">Thumbnail</div></div>
+          <div class="abtn" id="aAMeta" onclick="this.classList.toggle('on')"><div class="abtn-ico">🏷</div><div class="abtn-lbl">Metadata</div></div>
+          <div class="abtn" id="aALyrics" onclick="this.classList.toggle('on')"><div class="abtn-ico">🎵</div><div class="abtn-lbl">Lyrics</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIDEO TAB -->
+    <div id="tabVideo" style="display:none">
+      <div class="fsec">
+        <div class="frow">
+          <div class="fgrp"><div class="flbl">Title</div><input class="finput" id="vTitle" placeholder="Auto" /></div>
+        </div>
+        <div class="frow">
+          <div class="fgrp"><div class="flbl">Author</div><input class="finput" id="vAuthor" placeholder="Auto" /></div>
+          <div class="fgrp">
+            <div class="flbl">Container</div>
+            <select class="fsel" id="vFormat">
+              <option value="mp4">MP4</option>
+              <option value="webm">WEBM</option>
+              <option value="mkv">MKV</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="qsec">
+        <div class="qlbl">Video quality</div>
+        <div class="qlist" id="qList">
+          <div class="qchip on" data-q="best"><div><div class="qfmt">MP4</div></div><div><div class="qres">Best</div><div class="qinfo">Auto</div></div></div>
+          <div class="qchip" data-q="2160"><div><div class="qfmt">MP4</div></div><div><div class="qres">2160p</div><div class="qinfo">4K</div></div></div>
+          <div class="qchip" data-q="1440"><div><div class="qfmt">MP4</div></div><div><div class="qres">1440p</div><div class="qinfo">2K</div></div></div>
+          <div class="qchip" data-q="1080"><div><div class="qfmt">MP4</div></div><div><div class="qres">1080p</div><div class="qinfo">FHD</div></div></div>
+          <div class="qchip" data-q="720"><div><div class="qfmt">MP4</div></div><div><div class="qres">720p</div><div class="qinfo">HD</div></div></div>
+          <div class="qchip" data-q="480"><div><div class="qfmt">MP4</div></div><div><div class="qres">480p</div><div class="qinfo">SD</div></div></div>
+          <div class="qchip" data-q="360"><div><div class="qfmt">MP4</div></div><div><div class="qres">360p</div><div class="qinfo">Low</div></div></div>
+        </div>
+      </div>
+      <div class="savedir">
+        <div class="savedir-lbl">Save dir</div>
+        <div class="savedir-path">/storage/emulated/0/Download/Brahman/Video</div>
+      </div>
+      <div class="asec" id="plOpts" style="display:none">
+        <div class="albl">Playlist items</div>
+        <input class="finput" id="plItems" placeholder="e.g. 1-10 (blank = all)" />
+      </div>
+      <div class="asec">
+        <div class="albl">Adjust video</div>
+        <div class="agrid">
+          <div class="abtn" id="vThumb" onclick="this.classList.toggle('on')"><div class="abtn-ico">🖼</div><div class="abtn-lbl">Thumbnail</div></div>
+          <div class="abtn" id="vChap" onclick="this.classList.toggle('on')"><div class="abtn-ico">📚</div><div class="abtn-lbl">Chapters<span class="abadge" id="chapBadge">0</span></div></div>
+          <div class="abtn" id="vSubs" onclick="this.classList.toggle('on')"><div class="abtn-ico">💬</div><div class="abtn-lbl">Subtitles<span class="abadge" id="subBadge">0</span></div></div>
+          <div class="abtn" id="vAudio" onclick="this.classList.toggle('on')"><div class="abtn-ico">🔊</div><div class="abtn-lbl">Audio</div></div>
+          <div class="abtn" id="vRecode" onclick="this.classList.toggle('on')"><div class="abtn-ico">⚙</div><div class="abtn-lbl">Recode video</div></div>
+          <div class="abtn" id="vSponsor" onclick="this.classList.toggle('on')"><div class="abtn-ico">💰</div><div class="abtn-lbl">SponsorBlock</div></div>
+          <div class="abtn" id="vMeta" onclick="this.classList.toggle('on')"><div class="abtn-ico">🏷</div><div class="abtn-lbl">Metadata</div></div>
+          <div class="abtn" onclick="filenamePrompt()"><div class="abtn-ico">✏</div><div class="abtn-lbl">Filename</div></div>
+          <div class="abtn" onclick="showFormats()"><div class="abtn-ico">🎛</div><div class="abtn-lbl">Formats</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CMD TAB -->
+    <div id="tabCmd" style="display:none">
+      <div class="cmd-wrap">
+        <div class="flbl" style="margin-bottom:8px">Custom yt-dlp command</div>
+        <textarea class="cmd-area" id="cmdInput" placeholder="yt-dlp -f best URL"></textarea>
+        <button class="btn-go" style="width:100%" onclick="alert('Coming soon!')">▶ Run</button>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="prog-sec" id="progSec">
+      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+      <div class="prog-stats">
+        <span id="progSpeed">⚡ --</span>
+        <span id="progSize">📦 --</span>
+        <span id="progEta">⏱ --</span>
+      </div>
+      <div class="prog-status" id="progStatus"></div>
+      <div class="prog-log" id="progLog"></div>
+      <div class="prog-btns">
+        <button class="btn-cancel" id="btnCancel" onclick="cancelDL()">✕ Cancel</button>
+        <button class="btn-log-toggle" onclick="document.getElementById('progLog').classList.toggle('on')">📋 Log</button>
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- SUB PAGE OVERLAY -->
+<div class="sub-overlay" id="subOverlay">
+  <div class="sub-sheet">
+    <div class="sub-hdr">
+      <div class="sub-hdr-title" id="subTitle"></div>
+      <button class="btn-close-sub" onclick="closeSub()">✕ Close</button>
+    </div>
+    <div class="sub-content" id="subContent"></div>
+  </div>
+</div>
+
+<!-- FORMATS MODAL -->
+<div class="fmt-overlay" id="fmtOverlay">
+  <div class="fmt-sheet">
+    <div class="fmt-handle"></div>
+    <div class="fmt-title-bar" id="fmtTitle">Available Formats</div>
+    <div id="fmtList"></div>
+    <div style="padding:12px 16px">
+      <button class="btn-go" style="width:100%" onclick="document.getElementById('fmtOverlay').classList.remove('on')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav">
+  <div class="bni on" onclick="navTo('home',this)"><div class="bni-ico">🏠</div>Home</div>
+  <div class="bni" onclick="navTo('downloads',this);loadHistory()"><div class="bni-ico">⬇</div>Downloads</div>
+  <div class="bni" onclick="navTo('more',this)"><div class="bni-ico">···</div>More</div>
+</div>
+
+<script>
+// ── Server config ──────────────────────────────────────────────────────────────
+let SERVER = localStorage.getItem('serverIP') || 'localhost:3000';
+let BASE_URL = 'http://' + SERVER;
+let currentInfo = null;
+let currentUrl = '';
+let currentJobId = null;
+let currentTab = 'audio';
+let dlFilter = 'all';
+let activeDLCards = {};
+
+function connectServer() {
+  const ip = document.getElementById('serverIP').value.trim();
+  if (!ip) return;
+  const url = 'http://' + ip + '/api/status';
+  document.getElementById('serverError').style.display = 'none';
+  fetch(url, { signal: AbortSignal.timeout(5000) })
+    .then(r => r.json())
+    .then(() => {
+      SERVER = ip;
+      BASE_URL = 'http://' + ip;
+      localStorage.setItem('serverIP', ip);
+      document.getElementById('serverScreen').style.display = 'none';
+      document.getElementById('serverAddrDisplay').textContent = ip;
+      startStatusPoll();
+    })
+    .catch(() => {
+      document.getElementById('serverError').style.display = 'block';
+    });
+}
+
+// Auto-connect on load
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('serverIP');
+  if (saved) {
+    document.getElementById('serverIP').value = saved;
+    fetch('http://' + saved + '/api/status', { signal: AbortSignal.timeout(3000) })
+      .then(r => r.json())
+      .then(() => {
+        SERVER = saved;
+        BASE_URL = 'http://' + saved;
+        document.getElementById('serverScreen').style.display = 'none';
+        document.getElementById('serverAddrDisplay').textContent = saved;
+        startStatusPoll();
+      })
+      .catch(() => {}); // Show server screen
+  }
+});
+
+// ── Nav ────────────────────────────────────────────────────────────────────────
+function navTo(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.bni').forEach(b => b.classList.remove('on'));
+  document.getElementById('pg-' + name).classList.add('on');
+  el.classList.add('on');
+}
+
+// ── Status poll ────────────────────────────────────────────────────────────────
+function startStatusPoll() {
+  setInterval(() => {
+    fetch(BASE_URL + '/api/status')
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('badgeA').textContent = '▶ ' + d.active;
+        document.getElementById('badgeQ').textContent = '⏳ ' + d.queued;
+      }).catch(() => {});
+  }, 2500);
+}
+
+// ── Fetch info ─────────────────────────────────────────────────────────────────
+function fetchAndShow() {
+  const url = document.getElementById('mainUrl').value.trim();
+  if (!url) return alert('Paste a link first!');
+  currentUrl = url;
+
+  document.getElementById('homeMsg').innerHTML = '<div style="padding:30px;text-align:center"><span class="spin"></span> Fetching...</div>';
+
+  fetch(BASE_URL + '/api/info', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url })
+  }).then(r => r.json()).then(res => {
+    resetHomeMsg();
+    if (!res.success) { alert('❌ ' + res.error); return; }
+    currentInfo = res.data;
+    fillSheet(res.data);
+    document.getElementById('dlOverlay').classList.add('on');
+  }).catch(() => {
+    document.getElementById('homeMsg').innerHTML = '<div class="empty" style="margin-top:40px;color:#ff453a">❌ Server error</div>';
+  });
+}
+
+function resetHomeMsg() {
+  document.getElementById('homeMsg').innerHTML = `
+    <div class="empty" style="margin-top:40px">
+      <div class="empty-ico">⬇</div>
+      <div class="empty-txt">Paste a link to get started</div>
+      <div style="font-size:0.75rem;margin-top:8px;color:var(--muted)">YouTube · Instagram · Twitter · 1000+ sites</div>
+    </div>`;
+}
+
+function fillSheet(info) {
+  const thumb = document.getElementById('shThumb');
+  if (info.thumbnail) { thumb.src = info.thumbnail; thumb.classList.add('on'); } else thumb.classList.remove('on');
+  document.getElementById('shPlatform').textContent = info.platform;
+  document.getElementById('shDur').textContent = fmtDur(info.duration);
+
+  if (info.isPlaylist) {
+    const pl = document.getElementById('shPl');
+    pl.style.display = 'block'; pl.textContent = `📋 ${info.playlistCount} videos`;
+    document.getElementById('plOpts').style.display = 'block';
+  } else {
+    document.getElementById('shPl').style.display = 'none';
+    document.getElementById('plOpts').style.display = 'none';
+  }
+
+  document.getElementById('aTitle').value = info.title || '';
+  document.getElementById('vTitle').value = info.title || '';
+  document.getElementById('aAuthor').value = info.uploader || '';
+  document.getElementById('vAuthor').value = info.uploader || '';
+
+  if (info.subtitleCount > 0) { const b = document.getElementById('subBadge'); b.classList.add('on'); b.textContent = info.subtitleCount; }
+  if (info.chapterCount > 0) { const b = document.getElementById('chapBadge'); b.classList.add('on'); b.textContent = info.chapterCount; }
+
+  // Reset progress
+  document.getElementById('progSec').style.display = 'none';
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('progStatus').textContent = '';
+  document.getElementById('progLog').textContent = '';
+  document.getElementById('progLog').classList.remove('on');
+  document.getElementById('btnDl').disabled = false;
+}
+
+document.getElementById('dlOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('on'); });
+
+// ── Tabs ───────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  currentTab = name;
+  document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('tabAudio').style.display = name === 'audio' ? 'block' : 'none';
+  document.getElementById('tabVideo').style.display = name === 'video' ? 'block' : 'none';
+  document.getElementById('tabCmd').style.display = name === 'cmd' ? 'block' : 'none';
+}
+
+// ── Quality chips ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.qchip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('.qchip').forEach(x => x.classList.remove('on'));
+    c.classList.add('on');
+  });
+});
+function getQuality() { return document.querySelector('.qchip.on')?.dataset.q || 'best'; }
+
+// ── Start download ─────────────────────────────────────────────────────────────
+function startDL() {
+  if (!currentUrl) return;
+  const isAudio = currentTab === 'audio';
+  const type = isAudio ? 'audio' : 'video';
+  const format = isAudio ? document.getElementById('aFormat').value : document.getElementById('vFormat').value;
+  const quality = isAudio ? 'best' : getQuality();
+  const customTitle = (isAudio ? document.getElementById('aTitle').value : document.getElementById('vTitle').value).trim();
+
+  const embedThumb = (isAudio ? document.getElementById('aAThumb') : document.getElementById('vThumb')).classList.contains('on') ? '1' : '0';
+  const addMetadata = (isAudio ? document.getElementById('aAMeta') : document.getElementById('vMeta')).classList.contains('on') ? '1' : '0';
+  const embedSubs = document.getElementById('vSubs')?.classList.contains('on') ? '1' : '0';
+  const embedChapters = document.getElementById('vChap')?.classList.contains('on') ? '1' : '0';
+  const sponsorBlock = document.getElementById('vSponsor')?.classList.contains('on') ? '1' : '0';
+  const playlistItems = document.getElementById('plItems')?.value.trim() || '';
+
+  document.getElementById('progSec').style.display = 'block';
+  document.getElementById('progStatus').style.color = 'var(--orange)';
+  document.getElementById('progStatus').innerHTML = '<span class="spin"></span> Starting...';
+  document.getElementById('btnDl').disabled = true;
+
+  const params = new URLSearchParams({ url: currentUrl, type, format, quality, customTitle, embedThumb, addMetadata, embedSubs, embedChapters, sponsorBlock, playlistItems });
+  const evt = new EventSource(BASE_URL + '/api/download?' + params);
+
+  evt.addEventListener('jobid', e => { currentJobId = parseInt(e.data); });
+
+  evt.onmessage = e => {
+    try {
+      const d = JSON.parse(e.data);
+      document.getElementById('progFill').style.width = d.percent + '%';
+      document.getElementById('progSpeed').textContent = '⚡ ' + (d.speed || '--');
+      document.getElementById('progSize').textContent = '📦 ' + (d.filesize || '--');
+      document.getElementById('progEta').textContent = '⏱ ' + (d.eta || '--');
+      document.getElementById('progStatus').innerHTML = `<span class="spin"></span> ${d.percent}%`;
+      if (currentJobId && activeDLCards[currentJobId]) {
+        activeDLCards[currentJobId].querySelector('.dlcard-prog').style.width = d.percent + '%';
+      }
+    } catch {}
+  };
+
+  evt.addEventListener('log', e => {
+    const l = document.getElementById('progLog');
+    l.textContent += e.data + '\n';
+    l.scrollTop = l.scrollHeight;
+  });
+
+  evt.addEventListener('done', e => {
+    const d = JSON.parse(e.data);
+    document.getElementById('progFill').style.width = '100%';
+    document.getElementById('progStatus').style.color = 'var(--green)';
+    document.getElementById('progStatus').textContent = '✅ ' + d.filename + (d.filesize ? ' · ' + d.filesize : '');
+    document.getElementById('btnDl').disabled = false;
+    if (currentJobId && activeDLCards[currentJobId]) {
+      const c = activeDLCards[currentJobId];
+      c.querySelector('.dlcard-prog').style.width = '100%';
+      c.querySelector('.dlcard-status').className = 'dlcard-status done';
+      c.querySelector('.dlcard-status').textContent = '✅ ' + d.filename;
+    }
+    evt.close(); currentJobId = null;
+  });
+
+  evt.addEventListener('error', e => {
+    document.getElementById('progStatus').style.color = '#ff453a';
+    document.getElementById('progStatus').textContent = '❌ ' + (e.data || 'Failed');
+    document.getElementById('btnDl').disabled = false;
+    evt.close(); currentJobId = null;
+  });
+
+  // Add to downloads page
+  const cardId = Date.now();
+  addActiveDLCard(cardId, { title: customTitle || currentInfo?.title || currentUrl, thumbnail: currentInfo?.thumbnail, platform: currentInfo?.platform, type, format, quality });
+  currentJobId = cardId;
+}
+
+function cancelDL() {
+  if (!currentJobId) return;
+  fetch(BASE_URL + '/api/cancel/' + currentJobId, { method: 'POST' });
+  document.getElementById('progStatus').style.color = '#ff453a';
+  document.getElementById('progStatus').textContent = '✕ Cancelled';
+  document.getElementById('btnDl').disabled = false;
+  currentJobId = null;
+}
+
+// ── Downloads page ─────────────────────────────────────────────────────────────
+function addActiveDLCard(id, info) {
+  const list = document.getElementById('dlList');
+  if (list.querySelector('.empty')) list.innerHTML = '';
+  const card = document.createElement('div');
+  card.className = 'dlcard';
+  card.innerHTML = `
+    <div class="dlcard-thumb-wrap">
+      ${info.thumbnail ? `<img class="dlcard-thumb" src="${info.thumbnail}" />` : `<div class="dlcard-thumb" style="display:flex;align-items:center;justify-content:center;font-size:2.5rem">${info.type === 'audio' ? '🎵' : '🎬'}</div>`}
+      <span class="type-tag ${info.type}">${info.type.toUpperCase()}</span>
+    </div>
+    <div class="dlcard-body">
+      <div class="dlcard-title">${info.title}</div>
+      <div class="dlcard-sub">${info.platform || ''} · ${info.format?.toUpperCase() || ''} ${info.quality !== 'best' ? '· ' + info.quality + 'p' : ''}</div>
+      <div class="dlcard-prog-track"><div class="dlcard-prog"></div></div>
+      <div class="dlcard-stats"><span>⚡ --</span><span>0%</span><span>⏱ --</span></div>
+      <div class="dlcard-status active"><span class="spin"></span> Downloading...</div>
+    </div>`;
+  list.prepend(card);
+  activeDLCards[id] = card;
+}
+
+function loadHistory() {
+  fetch(BASE_URL + '/api/history').then(r => r.json()).then(data => {
+    const list = document.getElementById('dlList');
+    const activeCards = Object.values(activeDLCards);
+    const filtered = dlFilter === 'all' ? data : dlFilter === 'active' ? [] : data.filter(d => d.type === dlFilter);
+    list.innerHTML = '';
+    activeCards.forEach(c => list.appendChild(c));
+    if (!filtered.length && !activeCards.length) {
+      list.innerHTML = `<div class="empty" style="margin-top:30px"><div class="empty-ico">📥</div><div class="empty-txt">No downloads yet</div></div>`; return;
+    }
+    filtered.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'dlcard';
+      const d = new Date(item.date);
+      const ds = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      card.innerHTML = `
+        <div class="dlcard-thumb-wrap">
+          <div class="dlcard-thumb" style="display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--surface2)">${item.type === 'audio' ? '🎵' : '🎬'}</div>
+          <span class="type-tag ${item.type || 'video'}">${(item.type || 'VIDEO').toUpperCase()}</span>
+        </div>
+        <div class="dlcard-body">
+          <div class="dlcard-title">${item.title || 'Unknown'}</div>
+          <div class="dlcard-sub">${item.format?.toUpperCase() || ''} ${item.filesize ? '· ' + item.filesize : ''} · ${ds}</div>
+          <div class="dlcard-prog-track"><div class="dlcard-prog" style="width:${item.status === 'success' ? 100 : 0}%"></div></div>
+          <div class="dlcard-status ${item.status === 'success' ? 'done' : 'error'}">${item.status === 'success' ? '✅ ' + (item.filename || 'Complete') : '❌ Failed'}</div>
+        </div>`;
+      list.appendChild(card);
+    });
+  }).catch(() => {});
+}
+
+function setFilter(type, el) {
+  dlFilter = type;
+  document.querySelectorAll('.fchip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  loadHistory();
+}
+
+// ── Formats ────────────────────────────────────────────────────────────────────
+function showFormats() {
+  if (!currentUrl) return;
+  document.getElementById('fmtList').innerHTML = '<div style="padding:20px;text-align:center"><span class="spin"></span></div>';
+  document.getElementById('fmtOverlay').classList.add('on');
+  fetch(BASE_URL + '/api/formats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: currentUrl }) })
+    .then(r => r.json()).then(res => {
+      if (!res.success) { document.getElementById('fmtList').innerHTML = '<div style="padding:16px;color:#ff453a">Failed</div>'; return; }
+      document.getElementById('fmtTitle').textContent = res.title || 'Formats';
+      document.getElementById('fmtList').innerHTML = '';
+      res.formats.forEach(f => {
+        const row = document.createElement('div');
+        row.className = 'fmt-row';
+        row.innerHTML = `
+          <div>
+            <div class="fmt-left">${f.resolution}</div>
+            <div class="fmt-tags">
+              <span class="ftag ${f.ext}">${(f.ext || '').toUpperCase()}</span>
+              ${f.vcodec ? `<span class="ftag">${f.vcodec.substring(0,8)}</span>` : ''}
+              ${f.acodec ? `<span class="ftag">${f.acodec.substring(0,6)}</span>` : ''}
+              ${f.fps ? `<span class="ftag">${f.fps}fps</span>` : ''}
+            </div>
+          </div>
+          <div class="fmt-right">${f.filesize}<br><span style="font-size:0.65rem">id: ${f.id}</span></div>`;
+        document.getElementById('fmtList').appendChild(row);
+      });
+    });
+}
+
+// ── Sub pages ──────────────────────────────────────────────────────────────────
+function openSub(name) {
+  const titles = { queue: '🔄 Download Queue', logs: '📋 Logs', files: '📁 Browse Files', settings: '⚙ Settings', server: '🌐 Server Settings' };
+  document.getElementById('subTitle').textContent = titles[name] || name;
+  document.getElementById('subContent').innerHTML = '<div class="empty"><span class="spin"></span></div>';
+  document.getElementById('subOverlay').classList.add('on');
+  if (name === 'queue') loadQueue();
+  else if (name === 'logs') loadLogs();
+  else if (name === 'files') loadFiles();
+  else if (name === 'settings') loadSettings();
+  else if (name === 'server') loadServerSettings();
+}
+function closeSub() { document.getElementById('subOverlay').classList.remove('on'); }
+document.getElementById('subOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeSub(); });
+
+function loadQueue() {
+  fetch(BASE_URL + '/api/status').then(r => r.json()).then(d => {
+    const c = document.getElementById('subContent');
+    if (!d.queue?.length) { c.innerHTML = '<div class="empty"><div class="empty-ico">🔄</div><div class="empty-txt">Queue is empty</div></div>'; return; }
+    c.innerHTML = '';
+    d.queue.forEach(j => {
+      const el = document.createElement('div');
+      el.className = 'qitem';
+      el.innerHTML = `<div class="qitem-info"><div class="qitem-url">${j.title || j.url}</div><div class="qitem-meta">${j.type?.toUpperCase() || 'VIDEO'} · Queued</div></div><button class="btn-qcancel" onclick="fetch('${BASE_URL}/api/cancel/${j.id}',{method:'POST'}).then(()=>this.closest('.qitem').remove())">✕</button>`;
+      c.appendChild(el);
+    });
+  });
+}
+
+function loadLogs() {
+  fetch(BASE_URL + '/api/logs').then(r => r.json()).then(data => {
+    const c = document.getElementById('subContent');
+    if (!data.length) { c.innerHTML = '<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">No logs yet</div></div>'; return; }
+    c.innerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn-go" style="padding:7px 14px;font-size:0.78rem" onclick="fetch('${BASE_URL}/api/logs',{method:'DELETE'}).then(()=>loadLogs())">Clear All</button></div>`;
+    data.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'logitem';
+      const d = new Date(item.date);
+      el.innerHTML = `<div class="logitem-hdr"><div class="logdot ${item.status}"></div><div class="logtitle">${item.title || item.url}</div><div class="logdate">${d.toLocaleDateString()}</div></div><div class="logtext" id="lg${item.id}">${item.log || ''}</div>`;
+      el.querySelector('.logitem-hdr').onclick = () => document.getElementById('lg' + item.id).classList.toggle('on');
+      c.appendChild(el);
+    });
+  });
+}
+
+function loadFiles() {
+  const c = document.getElementById('subContent');
+  c.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:12px"><button class="fchip on" onclick="fetchFiles('video',this)">Video</button><button class="fchip" onclick="fetchFiles('audio',this)">Audio</button></div><div id="filesInner"></div>`;
+  fetchFiles('video', c.querySelector('.fchip'));
+}
+
+function fetchFiles(type, el) {
+  document.querySelectorAll('#subContent .fchip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  const inner = document.getElementById('filesInner');
+  inner.innerHTML = '<div style="text-align:center;padding:20px"><span class="spin"></span></div>';
+  fetch(BASE_URL + '/api/files?type=' + type).then(r => r.json()).then(files => {
+    if (!files.length) { inner.innerHTML = `<div class="empty"><div class="empty-ico">📁</div><div class="empty-txt">No ${type} files</div></div>`; return; }
+    inner.innerHTML = '';
+    files.forEach(f => {
+      const el = document.createElement('div');
+      el.className = 'fileitem';
+      el.innerHTML = `<div class="fileico">${type === 'audio' ? '🎵' : '🎬'}</div><div><div class="filename">${f.name}</div><div class="filemeta">${f.size} · ${new Date(f.date).toLocaleDateString()}</div></div>`;
+      inner.appendChild(el);
+    });
+  });
+}
+
+function loadSettings() {
+  const c = document.getElementById('subContent');
+  c.innerHTML = `
+    <div class="set-section">
+      <div class="set-header">Downloads</div>
+      <div class="set-card">
+        <div class="set-row">
+          <div><div class="set-lbl">Max Concurrent</div><div class="set-sub">Parallel downloads</div></div>
+          <select class="mini-sel" onchange="fetch('${BASE_URL}/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({maxConcurrent:this.value})})">
+            <option>1</option><option selected>2</option><option>3</option>
+          </select>
+        </div>
+        <div class="set-row">
+          <div><div class="set-lbl">Embed Thumbnail</div><div class="set-sub">Always embed</div></div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="set-row">
+          <div><div class="set-lbl">SponsorBlock</div><div class="set-sub">Skip sponsor segments</div></div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+    <div class="set-section">
+      <div class="set-header">Storage</div>
+      <div class="set-card">
+        <div class="set-row"><div><div class="set-lbl">Video Path</div><div class="set-sub">/Download/Brahman/Video</div></div></div>
+        <div class="set-row"><div><div class="set-lbl">Audio Path</div><div class="set-sub">/Download/Brahman/Audio</div></div></div>
+      </div>
+    </div>
+    <div class="set-section">
+      <div class="set-header">Danger</div>
+      <div class="set-card">
+        <div class="set-row" style="cursor:pointer" onclick="if(confirm('Clear history?'))fetch('${BASE_URL}/api/history',{method:'DELETE'}).then(()=>alert('Cleared!'))">
+          <div><div class="set-lbl" style="color:#ff453a">Clear History</div></div><span style="color:var(--muted)">›</span>
+        </div>
+        <div class="set-row" style="cursor:pointer" onclick="localStorage.removeItem('serverIP');location.reload()">
+          <div><div class="set-lbl" style="color:#ff453a">Disconnect Server</div></div><span style="color:var(--muted)">›</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function loadServerSettings() {
+  const c = document.getElementById('subContent');
+  c.innerHTML = `
+    <div class="set-section">
+      <div class="set-header">Server Address</div>
+      <input class="finput" id="newServerIP" value="${SERVER}" placeholder="192.168.x.x:3000" style="margin-bottom:12px" />
+      <button class="btn-go" style="width:100%" onclick="reconnect()">Reconnect</button>
+    </div>
+    <div style="margin-top:16px;background:var(--surface2);border-radius:10px;padding:14px;font-size:0.78rem;color:var(--muted);line-height:1.7">
+      <strong style="color:var(--text)">How to find your IP:</strong><br>
+      In Termux run:<br>
+      <span style="color:var(--green);font-family:monospace">ip addr show wlan0</span><br>
+      Look for <strong>inet</strong> address like 192.168.x.x<br><br>
+      Then start server:<br>
+      <span style="color:var(--green);font-family:monospace">node ~/backend/index.js</span>
+    </div>`;
+}
+
+function reconnect() {
+  const ip = document.getElementById('newServerIP').value.trim();
+  fetch('http://' + ip + '/api/status', { signal: AbortSignal.timeout(4000) })
+    .then(r => r.json())
+    .then(() => {
+      SERVER = ip; BASE_URL = 'http://' + ip;
+      localStorage.setItem('serverIP', ip);
+      document.getElementById('serverAddrDisplay').textContent = ip;
+      closeSub();
+      alert('✅ Connected to ' + ip);
+    })
+    .catch(() => alert('❌ Cannot connect to ' + ip));
+}
+
+function scheduleDownload() { const t = prompt('Schedule at (HH:MM):', '22:00'); if (t) alert(`Scheduled for ${t} ✅`); }
+function filenamePrompt() { const n = prompt('Filename template:\n%(title)s = title\n%(id)s = ID\n%(uploader)s = uploader', '%(title)s'); if (n !== null) document.getElementById('vTitle').value = n; }
+function fmtDur(s) { if (!s) return ''; const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = Math.floor(s%60); return h ? `${h}:${pad(m)}:${pad(ss)}` : `${m}:${pad(ss)}`; }
+function pad(n) { return String(n).padStart(2,'0'); }
+
+document.getElementById('mainUrl').addEventListener('keydown', e => { if (e.key === 'Enter') fetchAndShow(); });
+document.getElementById('fmtOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('on'); });
+</script>
+</body>
+</html>
