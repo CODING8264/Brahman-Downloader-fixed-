@@ -1,0 +1,29 @@
+{
+  "appId": "com.brahman.mediadownloader",
+  "appName": "ब्राह्मण Downloader",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": "brahman.keystore",
+      "keystorePassword": "brahman123",
+      "keystoreAlias": "brahman",
+      "keystoreAliasPassword": "brahman123",
+      "releaseType": "APK"
+    }
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#111111",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "Dark",
+      "backgroundColor": "#111111"
+    }
+  }
+}
