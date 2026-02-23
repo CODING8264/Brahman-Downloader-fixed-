@@ -11,21 +11,21 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+        uses: android-actions/setup-android@v3
 
       - name: Install dependencies
         run: npm install
@@ -70,23 +70,14 @@ jobs:
             -keypass brahman123 \
             app/build/outputs/apk/release/app-release-unsigned.apk \
             brahman
-          
-          zipalign -v 4 \
+
+          $ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | tail -1)/zipalign -v 4 \
             app/build/outputs/apk/release/app-release-unsigned.apk \
             app/build/outputs/apk/release/BrahmanDownloader.apk
 
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: BrahmanDownloader-APK
           path: android/app/build/outputs/apk/release/BrahmanDownloader.apk
           retention-days: 30
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: android/app/build/outputs/apk/release/BrahmanDownloader.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
