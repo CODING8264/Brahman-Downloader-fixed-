@@ -1,0 +1,92 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Generate Keystore
+        run: |
+          keytool -genkey -v \
+            -keystore android/brahman.keystore \
+            -alias brahman \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass brahman123 \
+            -keypass brahman123 \
+            -dname "CN=Brahman, OU=App, O=Brahman, L=India, S=India, C=IN"
+
+      - name: Build Release APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Sign APK
+        run: |
+          cd android
+          jarsigner -verbose \
+            -sigalg SHA1withRSA \
+            -digestalg SHA1 \
+            -keystore brahman.keystore \
+            -storepass brahman123 \
+            -keypass brahman123 \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            brahman
+          
+          zipalign -v 4 \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/apk/release/BrahmanDownloader.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: BrahmanDownloader-APK
+          path: android/app/build/outputs/apk/release/BrahmanDownloader.apk
+          retention-days: 30
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: android/app/build/outputs/apk/release/BrahmanDownloader.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
